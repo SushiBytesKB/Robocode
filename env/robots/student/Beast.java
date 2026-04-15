@@ -65,10 +65,6 @@ public class Beast extends TeamRobot
         radarTurn += (radarTurn < 0 ? -extraTurn : extraTurn);
         setTurnRadarRightRadians(radarTurn);
 
-        // FSM
-        double myEnergy = getEnergy();
-        double enemyEnergy = event.getEnergy();
-
         // we go opposite of where enemy is facing relative to us
         double enemyFrontDir = Math.sin(event.getHeadingRadians() - absBearing);
         double orbitDir = (enemyFrontDir >= 0) ? -1 : 1; 
@@ -78,41 +74,11 @@ public class Beast extends TeamRobot
         // Potentil TODO: This makes us slower and less accurate with our pathing. For now, worth to not take the damage from walls
         double smoothedAngle = wallSmooth(getX(), getY(), moveAngle, orbitDir);
 
-        // Cornered if wall smoothing is too much or if we are close to enemy
-        boolean isCornered = ((Math.abs(Utils.normalRelativeAngle(smoothedAngle - moveAngle)) > 1.0) || (event.getDistance() < 120));
-
-        // either we ram or engage. onScannedRobot assumed we finished searching
-        currentState = State.ENGAGING;
-
-        if (isCornered && (myEnergy >= enemyEnergy) && (myEnergy >= 30.0)) 
-        {
-            currentState = State.RAMMING;
-        }
+        currentState = State.RAMMING;
 
         // Movement
-        if (currentState == State.RAMMING)
-        {
-            setTurnRightRadians(Utils.normalRelativeAngle(absBearing - getHeadingRadians()));
-            setAhead(event.getDistance() + 30); // Don't overcommit
-        }
-        else if (currentState == State.ENGAGING) 
-        {
-            // Circling around enemy
-            double turn = Utils.normalRelativeAngle(smoothedAngle - getHeadingRadians());
-
-            // 
-            if (Math.abs(turn) > Math.PI / 2) 
-            {
-                turn = Utils.normalRelativeAngle(turn + Math.PI);
-                setAhead(-100);
-            } 
-            else 
-            {
-                setAhead(100);
-            }
-
-            setTurnRightRadians(turn);
-        }
+        setTurnRightRadians(Utils.normalRelativeAngle(absBearing - getHeadingRadians()));
+        setAhead(event.getDistance() + 30); // Don't overcommit
 
         // Attack
         // Power scale: 1.0 (4 * power) - 3.0 ((4 * power) + 2 * (power - 1))
