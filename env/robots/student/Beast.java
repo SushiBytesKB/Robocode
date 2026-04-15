@@ -12,8 +12,7 @@ public class Beast extends TeamRobot
     private enum State 
     {
         SEARCHING, 
-        ENGAGING, // circle the enemy 
-        RAMMING // collide with enemy only when we get the chance
+        RAMMING
     }
 
     private State currentState = State.SEARCHING;
@@ -65,20 +64,11 @@ public class Beast extends TeamRobot
         radarTurn += (radarTurn < 0 ? -extraTurn : extraTurn);
         setTurnRadarRightRadians(radarTurn);
 
-        // we go opposite of where enemy is facing relative to us
-        double enemyFrontDir = Math.sin(event.getHeadingRadians() - absBearing);
-        double orbitDir = (enemyFrontDir >= 0) ? -1 : 1; 
-        double moveAngle = absBearing + (Math.PI / 2) * orbitDir;
-        
-        // Custom function to prevent wall collisions
-        // Potentil TODO: This makes us slower and less accurate with our pathing. For now, worth to not take the damage from walls
-        double smoothedAngle = wallSmooth(getX(), getY(), moveAngle, orbitDir);
-
         currentState = State.RAMMING;
 
         // Movement
         setTurnRightRadians(Utils.normalRelativeAngle(absBearing - getHeadingRadians()));
-        setAhead(event.getDistance() + 30); // Don't overcommit
+        setAhead(event.getDistance() + 10); // Don't overcommit
 
         // Attack
         // Power scale: 1.0 (4 * power) - 3.0 ((4 * power) + 2 * (power - 1))
@@ -109,35 +99,11 @@ public class Beast extends TeamRobot
 
         // DONE: looked up math tutorials to fix all the math
         setTurnGunRightRadians(Utils.normalRelativeAngle(Math.atan2(predictedX - getX(), predictedY - getY()) - getGunHeadingRadians()));
+        setFire(bulletPower);
         
-        // Did not check for distance in case this bot snipes like a pro
-        if (getGunHeat() == 0 && Math.abs(getGunTurnRemaining()) < 10)
-        {
-            setFire(bulletPower);
-        }
-
         lastEnemyHeading = event.getHeadingRadians();
         lastScanTime = getTime();
 
         // execute() is called in the run loop
-    }
-
-    // Prevent wall collisions
-    private double wallSmooth(double currentX, double currentY, double angle, double orientation)
-    {
-        double fieldW = getBattleFieldWidth();
-        double fieldH = getBattleFieldHeight();
-
-        // check if line segment intersects with margin of the battlefield
-        // 160 is length of segment, 30 is margin battlefield
-        while (currentX + Math.sin(angle) * 160 < 30 ||
-               currentX + Math.sin(angle) * 160 > fieldW - 30 ||
-               currentY + Math.cos(angle) * 160 < 30 ||
-               currentY + Math.cos(angle) * 160 > fieldH - 30)
-        {    
-            angle += orientation * 0.1; // adjust bit by bit - inspired by gradient descent hehe
-        }
-
-        return angle;
     }
 }
