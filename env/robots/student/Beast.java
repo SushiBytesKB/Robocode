@@ -48,7 +48,6 @@ public class Beast extends TeamRobot
 
                 // 360 radar spam lmao
                 setTurnRadarRightRadians(Double.POSITIVE_INFINITY);
-                break;
             }
 
             execute();
